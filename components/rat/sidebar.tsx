@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
 import Link from "next/link"
 import { FileSearch, TestTube2, Plus, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,25 @@ import { useProject } from "@/lib/project-context"
 export function RatSidebar() {
   const { projects, selectedProject, setSelectedProject, isLoading, error } = useProject()
   const [pendingProjectId, setPendingProjectId] = useState<string>("")
+  const params = useParams()
+  
+  // Get current project ID and app ID from URL if available
+  const urlProjectId = params?.projectId ? Number(params.projectId) : null
+  const currentAppId = params?.appId ? Number(params.appId) : null
+
+  // Auto-select project based on URL params
+  useEffect(() => {
+    if (urlProjectId && projects.length > 0 && !isLoading) {
+      // Only auto-select if current selected project doesn't match URL
+      if (!selectedProject || selectedProject.id !== urlProjectId) {
+        const projectFromUrl = projects.find((p) => p.id === urlProjectId)
+        if (projectFromUrl) {
+          console.log("[Sidebar] Auto-selecting project from URL:", projectFromUrl.id)
+          setSelectedProject(projectFromUrl)
+        }
+      }
+    }
+  }, [urlProjectId, projects, isLoading, selectedProject, setSelectedProject])
 
   const handleSelectProject = (projectId: string) => {
     setPendingProjectId(projectId)
@@ -115,10 +135,19 @@ export function RatSidebar() {
                   {app.name}
                 </Link>
               ))}
-              <button className="flex items-center gap-1 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link
+                href={
+                  currentAppId
+                    ? `/projects/${selectedProject.id}/apps/${currentAppId}/add-new-feature`
+                    : selectedProject.apps.length > 0
+                    ? `/projects/${selectedProject.id}/apps/${selectedProject.apps[0].id}/add-new-feature`
+                    : `/projects/${selectedProject.id}/add-new-app`
+                }
+                className="flex items-center gap-1 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <Plus className="h-3 w-3" />
                 Add new
-              </button>
+              </Link>
             </nav>
           </div>
         </div>

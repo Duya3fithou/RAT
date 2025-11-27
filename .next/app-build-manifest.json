@@ -25,6 +25,26 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/new-project/page.js"
+    ],
+    "/projects/[projectId]/generate-testcase/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/projects/[projectId]/generate-testcase/page.js"
+    ],
+    "/projects/[projectId]/apps/[appId]/add-new-feature/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/projects/[projectId]/apps/[appId]/add-new-feature/page.js"
+    ],
+    "/projects/[projectId]/add-new-app/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/projects/[projectId]/add-new-app/page.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

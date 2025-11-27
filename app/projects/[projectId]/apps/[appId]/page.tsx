@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useParams } from "next/navigation"
 import { RatLayout } from "@/components/rat/layout"
 import { useProject } from "@/lib/project-context"
@@ -11,8 +12,22 @@ import Link from "next/link"
 
 function AppDetailContent() {
   const params = useParams()
-  const { selectedProject } = useProject()
+  const { projects, selectedProject, setSelectedProject } = useProject()
+  const projectId = Number(params.projectId)
   const appId = Number(params.appId)
+
+  // Auto-select project if not already selected
+  useEffect(() => {
+    if (projectId && projects.length > 0) {
+      if (!selectedProject || selectedProject.id !== projectId) {
+        const project = projects.find((p) => p.id === projectId)
+        if (project) {
+          console.log("[AppDetail] Auto-selecting project:", project.id)
+          setSelectedProject(project)
+        }
+      }
+    }
+  }, [projectId, projects, selectedProject, setSelectedProject])
 
   const app = selectedProject?.apps.find((a) => a.id === appId)
 
@@ -76,10 +91,17 @@ function AppDetailContent() {
             </div>
           </div>
         </div>
-        <Button variant="outline" className="rounded-xl bg-transparent">
-          <Edit className="mr-2 h-4 w-4" />
-          Edit
-        </Button>
+        <div className="flex gap-2">
+          <Link href={`/projects/${selectedProject?.id}/apps/${app.id}/add-new-feature`}>
+            <Button className="rounded-xl bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90">
+              Add Feature
+            </Button>
+          </Link>
+          <Button variant="outline" className="rounded-xl bg-transparent">
+            <Edit className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
+        </div>
       </div>
 
       <Card className="rounded-2xl">

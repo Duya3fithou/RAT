@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect } from "react"
+import { useParams } from "next/navigation"
 import { RatLayout } from "@/components/rat/layout"
 import { useProject } from "@/lib/project-context"
 import { Button } from "@/components/ui/button"
@@ -9,11 +11,27 @@ import { TestTube2, Loader2, Copy, Check } from "lucide-react"
 import { useState } from "react"
 
 function GenerateTestcaseContent() {
-  const { selectedProject } = useProject()
+  const params = useParams()
+  const { projects, selectedProject, setSelectedProject } = useProject()
   const [requirement, setRequirement] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [testCases, setTestCases] = useState<string[] | null>(null)
   const [copied, setCopied] = useState(false)
+
+  const projectId = Number(params.projectId)
+
+  // Auto-select project if not already selected
+  useEffect(() => {
+    if (projectId && projects.length > 0) {
+      if (!selectedProject || selectedProject.id !== projectId) {
+        const project = projects.find((p) => p.id === projectId)
+        if (project) {
+          console.log("[GenerateTestcase] Auto-selecting project:", project.id)
+          setSelectedProject(project)
+        }
+      }
+    }
+  }, [projectId, projects, selectedProject, setSelectedProject])
 
   const handleGenerate = async () => {
     setIsGenerating(true)

@@ -94,3 +94,29 @@ export async function getProjectById(id: number): Promise<Project> {
     throw error
   }
 }
+
+export interface CreateProjectParams {
+  name: string
+  description: string
+}
+
+export async function createProject(params: CreateProjectParams): Promise<Project> {
+  try {
+    console.log("[Client] Creating project:", params)
+    
+    const response = await clientApi.post<Project>("/api/projects", params)
+
+    console.log("[Client] createProject response:", response.data)
+
+    return response.data
+  } catch (error) {
+    console.error("[Client] createProject error:", error)
+    
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.error || error.message
+      throw new Error(message)
+    }
+    
+    throw error
+  }
+}
