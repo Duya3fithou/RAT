@@ -1,4 +1,7 @@
-./node_modules
+# Dependencies
+node_modules/
+
+# Environment files
 .env
 .env.local
 .env.development.local
@@ -7,13 +10,21 @@
 .env.development
 .env.test
 .env.production
+
+# Build output
 .next
 .turbo
+
+# IDE
 .vscode
 .idea
+
+# OS
 .DS_Store
 
-node_modules/
+# Logs
 npm-debug.log
 yarn-error.log
+
+# iOS
 /ios/podfile.lock
