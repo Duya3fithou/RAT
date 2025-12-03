@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { FileSearch, TestTube2, Plus, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -10,8 +10,9 @@ import { useProject } from "@/lib/project-context"
 
 export function RatSidebar() {
   const { projects, selectedProject, setSelectedProject, isLoading, error } = useProject()
-  const [pendingProjectId, setPendingProjectId] = useState<string>("")
   const params = useParams()
+  const pathname = usePathname()
+  const router = useRouter()
   
   // Get current project ID and app ID from URL if available
   const urlProjectId = params?.projectId ? Number(params.projectId) : null
@@ -32,14 +33,28 @@ export function RatSidebar() {
   }, [urlProjectId, projects, isLoading, selectedProject, setSelectedProject])
 
   const handleSelectProject = (projectId: string) => {
-    setPendingProjectId(projectId)
-  }
-
-  const handleConfirm = () => {
-    if (pendingProjectId) {
-      const project = projects.find((p) => p.id.toString() === pendingProjectId)
-      if (project) {
-        setSelectedProject(project)
+    const project = projects.find((p) => p.id.toString() === projectId)
+    if (project) {
+      setSelectedProject(project)
+      
+      // Nếu đang ở trong một trang project cụ thể, redirect sang project mới
+      if (pathname && pathname.includes('/projects/')) {
+        // Kiểm tra các trang con
+        if (pathname.includes('/analyze')) {
+          router.push(`/projects/${projectId}/analyze`)
+        } else if (pathname.includes('/generate-testcase')) {
+          router.push(`/projects/${projectId}/generate-testcase`)
+        } else if (pathname.includes('/apps/')) {
+          // Nếu đang ở trang app, chuyển về trang project hoặc app đầu tiên của project mới
+          if (project.apps.length > 0) {
+            router.push(`/projects/${projectId}/apps/${project.apps[0].id}`)
+          } else {
+            router.push(`/projects/${projectId}/add-new-app`)
+          }
+        } else if (pathname.includes('/add-new-app')) {
+          router.push(`/projects/${projectId}/add-new-app`)
+        }
+        // Nếu không match các trường hợp trên, giữ nguyên (có thể đang ở trang list)
       }
     }
   }
@@ -64,7 +79,7 @@ export function RatSidebar() {
         )}
         
         <Select
-          value={pendingProjectId || selectedProject?.id.toString() || ""}
+          value={selectedProject?.id.toString() || ""}
           onValueChange={handleSelectProject}
           disabled={isLoading || !!error}
         >
@@ -92,10 +107,6 @@ export function RatSidebar() {
             )}
           </SelectContent>
         </Select>
-
-        <Button onClick={handleConfirm} className="w-full rounded-lg" disabled={!pendingProjectId && !selectedProject}>
-          Confirm
-        </Button>
       </div>
 
       {/* Tools & System Structure - Only show when project is selected */}

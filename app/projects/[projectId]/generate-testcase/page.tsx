@@ -20,7 +20,7 @@ function GenerateTestcaseContent() {
 
   const projectId = Number(params.projectId)
 
-  // Auto-select project if not already selected
+  // Auto-select project if not already selected và reset state khi đổi project
   useEffect(() => {
     if (projectId && projects.length > 0) {
       if (!selectedProject || selectedProject.id !== projectId) {
@@ -28,6 +28,10 @@ function GenerateTestcaseContent() {
         if (project) {
           console.log("[GenerateTestcase] Auto-selecting project:", project.id)
           setSelectedProject(project)
+          // Reset state khi chuyển project
+          setRequirement("")
+          setTestCases(null)
+          setIsGenerating(false)
         }
       }
     }

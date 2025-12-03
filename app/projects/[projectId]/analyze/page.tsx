@@ -7,7 +7,7 @@ import { useProject } from "@/lib/project-context"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileSearch, Loader2, Send, AlertCircle } from "lucide-react"
+import { FileSearch, Loader2, Send, AlertCircle, Download } from "lucide-react"
 import { ThreadsSidebar } from "@/components/requirement-analysis/threads-sidebar"
 import { MessageItem } from "@/components/requirement-analysis/message-item"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -21,6 +21,7 @@ import {
   Message,
 } from "@/lib/api/requirement-analysis"
 import { toast } from "sonner"
+import axios from "axios"
 
 function AnalyzeContent() {
   const params = useParams()
@@ -38,6 +39,7 @@ function AnalyzeContent() {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [sendingStatus, setSendingStatus] = useState<"sending" | "analyzing" | null>(null)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   // State quản lý error
   const [error, setError] = useState<string | null>(null)
@@ -58,9 +60,15 @@ function AnalyzeContent() {
     }
   }, [projectId, projects, selectedProject, setSelectedProject])
 
-  // Load threads khi component mount
+  // Load threads khi component mount hoặc projectId thay đổi
   useEffect(() => {
     if (projectId) {
+      // Reset state khi chuyển project
+      setSelectedThreadId(null)
+      setMessages([])
+      setInputContent("")
+      setError(null)
+      // Load threads mới
       loadThreads()
     }
   }, [projectId])
@@ -202,6 +210,51 @@ function AnalyzeContent() {
     }
   }
 
+  const handleDownloadTestcases = async () => {
+    if (!selectedThreadId) {
+      toast.error("Please select a conversation first")
+      return
+    }
+
+    try {
+      setIsDownloading(true)
+      setError(null)
+
+      const apiUrl = `/api/projects/${projectId}/requirement-analyze/threads/${selectedThreadId}/test-cases`
+      console.log("[Download] Fetching test cases from:", apiUrl)
+
+      const response = await axios.get(apiUrl, {
+        responseType: "blob",
+      })
+
+      // Tạo blob URL và trigger download
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+
+      // Tạo tên file với timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-")
+      link.download = `testcases_${selectedThreadId}_${timestamp}.xlsx`
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      toast.success("Test cases downloaded successfully!")
+    } catch (err: any) {
+      console.error("Error downloading test cases:", err)
+      const errorMessage = err.response?.data?.error || err.message || "Failed to download test cases"
+      setError(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
   return (
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Sidebar - Danh sách threads */}
@@ -217,15 +270,37 @@ function AnalyzeContent() {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="border-b bg-background p-4">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold flex items-center gap-3">
-              <FileSearch className="h-6 w-6" />
-              Analyze Requirement
-            </h1>
-            {selectedProject && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Project: <span className="font-medium text-foreground">{selectedProject.name}</span>
-              </p>
+          <div className="max-w-4xl mx-auto flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-3">
+                <FileSearch className="h-6 w-6" />
+                Analyze Requirement
+              </h1>
+              {selectedProject && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Project: <span className="font-medium text-foreground">{selectedProject.name}</span>
+                </p>
+              )}
+            </div>
+            {selectedThreadId && (
+              <Button
+                onClick={handleDownloadTestcases}
+                disabled={isDownloading}
+                variant="outline"
+                className="rounded-xl"
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download testcases
+                  </>
+                )}
+              </Button>
             )}
           </div>
         </div>

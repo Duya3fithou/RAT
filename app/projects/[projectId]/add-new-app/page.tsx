@@ -31,7 +31,7 @@ export default function AddNewAppPage() {
   const [type, setType] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Auto-select project if not already selected
+  // Auto-select project if not already selected và reset form khi đổi project
   useEffect(() => {
     if (projectId && projects.length > 0) {
       if (!selectedProject || selectedProject.id !== projectId) {
@@ -39,6 +39,9 @@ export default function AddNewAppPage() {
         if (project) {
           console.log("[AddNewApp] Auto-selecting project:", project.id)
           setSelectedProject(project)
+          // Reset form khi chuyển project
+          setName("")
+          setType("")
         }
       }
     }

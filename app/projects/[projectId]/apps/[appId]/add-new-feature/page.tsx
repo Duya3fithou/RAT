@@ -34,7 +34,7 @@ export default function AddNewFeaturePage() {
   const appId = Number(params.appId)
   const projectId = Number(params.projectId)
 
-  // Auto-select project if not already selected
+  // Auto-select project if not already selected và reset form khi đổi project
   useEffect(() => {
     if (projectId && projects.length > 0) {
       if (!selectedProject || selectedProject.id !== projectId) {
@@ -42,6 +42,10 @@ export default function AddNewFeaturePage() {
         if (project) {
           console.log("[AddNewFeature] Auto-selecting project:", project.id)
           setSelectedProject(project)
+          // Reset form khi chuyển project
+          setTitle("")
+          setDescription("")
+          setFeatures([{ name: "", description: "", relatedFeature: "", relationDescription: "" }])
         }
       }
     }
