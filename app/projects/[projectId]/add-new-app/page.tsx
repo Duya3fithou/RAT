@@ -52,8 +52,8 @@ export default function AddNewAppPage() {
 
     if (!name.trim()) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng nhập tên app",
+        title: "Error",
+        description: "Please enter app name",
         variant: "destructive",
       })
       return
@@ -61,8 +61,8 @@ export default function AddNewAppPage() {
 
     if (!type) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng chọn loại app",
+        title: "Error",
+        description: "Please select app type",
         variant: "destructive",
       })
       return
@@ -94,8 +94,8 @@ export default function AddNewAppPage() {
       await refreshProjects()
 
       toast({
-        title: "Thành công",
-        description: `App "${result.name}" đã được tạo thành công`,
+        title: "Success",
+        description: `App "${result.name}" has been created successfully`,
       })
 
       // Navigate back to home or app detail
@@ -103,8 +103,8 @@ export default function AddNewAppPage() {
     } catch (error) {
       console.error("Failed to create app:", error)
       toast({
-        title: "Lỗi",
-        description: error instanceof Error ? error.message : "Không thể tạo app",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create app",
         variant: "destructive",
       })
     } finally {
@@ -118,7 +118,7 @@ export default function AddNewAppPage() {
         {/* Header */}
         <div className="flex items-center justify-between gap-4 p-6 border-b border-border/50 bg-muted/10">
           <h1 className="text-2xl font-bold">
-            Thêm App mới
+            Add New App
             {selectedProject && (
               <span className="text-base font-normal text-muted-foreground ml-2">
                 - {selectedProject.name}
@@ -142,13 +142,13 @@ export default function AddNewAppPage() {
             {/* Name Section */}
             <div className="space-y-3">
               <Label htmlFor="name" className="text-lg font-bold">
-                Tên App <span className="text-red-500">*</span>
+                App Name <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ví dụ: User Mobile App, Admin Web, CMS..."
+                placeholder="e.g: User Mobile App, Admin Web, CMS..."
                 className="text-lg font-medium rounded-xl border-muted-foreground/20 h-12"
                 disabled={isSubmitting}
                 required
@@ -158,11 +158,11 @@ export default function AddNewAppPage() {
             {/* Type Section */}
             <div className="space-y-3">
               <Label htmlFor="type" className="text-lg font-bold">
-                Loại App <span className="text-red-500">*</span>
+                App Type <span className="text-red-500">*</span>
               </Label>
               <Select value={type} onValueChange={setType} disabled={isSubmitting}>
                 <SelectTrigger className="w-full rounded-xl border-muted-foreground/20 h-12">
-                  <SelectValue placeholder="Chọn loại app" />
+                  <SelectValue placeholder="Select app type" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   <SelectItem value="USER_WEB">User Web</SelectItem>
@@ -183,7 +183,7 @@ export default function AddNewAppPage() {
                   className="rounded-xl"
                   disabled={isSubmitting}
                 >
-                  Hủy
+                  Cancel
                 </Button>
               </Link>
               <Button
@@ -194,10 +194,10 @@ export default function AddNewAppPage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Đang tạo...
+                    Creating...
                   </>
                 ) : (
-                  "Tạo App"
+                  "Create App"
                 )}
               </Button>
             </div>

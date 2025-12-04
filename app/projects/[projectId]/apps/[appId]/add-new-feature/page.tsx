@@ -88,8 +88,8 @@ export default function AddNewFeaturePage() {
 
     if (!title.trim()) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng nhập tiêu đề",
+        title: "Error",
+        description: "Please enter title",
         variant: "destructive",
       })
       return
@@ -97,8 +97,8 @@ export default function AddNewFeaturePage() {
 
     if (!description.trim()) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng nhập mô tả",
+        title: "Error",
+        description: "Please enter description",
         variant: "destructive",
       })
       return
@@ -111,8 +111,8 @@ export default function AddNewFeaturePage() {
 
     if (validFeatures.length === 0) {
       toast({
-        title: "Lỗi",
-        description: "Vui lòng thêm ít nhất một function",
+        title: "Error",
+        description: "Please add at least one function",
         variant: "destructive",
       })
       return
@@ -140,8 +140,8 @@ export default function AddNewFeaturePage() {
       await refreshProjects()
 
       toast({
-        title: "Thành công",
-        description: `Feature "${result.name}" đã được tạo thành công`,
+        title: "Success",
+        description: `Feature "${result.name}" has been created successfully`,
       })
 
       // Navigate back to app detail page
@@ -149,9 +149,9 @@ export default function AddNewFeaturePage() {
     } catch (error) {
       console.error("Failed to create feature:", error)
       toast({
-        title: "Lỗi",
+        title: "Error",
         description:
-          error instanceof Error ? error.message : "Không thể tạo feature",
+          error instanceof Error ? error.message : "Failed to create feature",
         variant: "destructive",
       })
     } finally {
@@ -186,7 +186,7 @@ export default function AddNewFeaturePage() {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Đang lưu...
+                Saving...
               </>
             ) : (
               "Save changes"
@@ -222,7 +222,7 @@ export default function AddNewFeaturePage() {
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Nhập tiêu đề..."
+                placeholder="Enter title..."
                 className="text-lg font-medium rounded-xl border-muted-foreground/20 h-12"
                 disabled={isSubmitting}
                 required
@@ -277,7 +277,7 @@ export default function AddNewFeaturePage() {
                     id={`func-${index}`}
                     value={feature.name}
                     onChange={(e) => updateFeature(index, "name", e.target.value)}
-                    placeholder="Tên function"
+                    placeholder="Function name"
                     className="rounded-xl border-muted-foreground/20 bg-background"
                     disabled={isSubmitting}
                   />
@@ -286,7 +286,7 @@ export default function AddNewFeaturePage() {
                     onChange={(e) =>
                       updateFeature(index, "description", e.target.value)
                     }
-                    placeholder="Mô tả function"
+                    placeholder="Function description"
                     className="min-h-[100px] rounded-xl border-muted-foreground/20 bg-background resize-none"
                     disabled={isSubmitting}
                   />

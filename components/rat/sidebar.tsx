@@ -7,13 +7,20 @@ import { FileSearch, TestTube2, Plus, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useProject } from "@/lib/project-context"
+import { NewProjectDialog } from "@/components/projects/new-project-dialog"
+import { createProject } from "@/lib/api/projects"
+import { toast } from "sonner"
 
 export function RatSidebar() {
-  const { projects, selectedProject, setSelectedProject, isLoading, error } = useProject()
+  const { projects, selectedProject, setSelectedProject, isLoading, error, refreshProjects } = useProject()
   const params = useParams()
   const pathname = usePathname()
   const router = useRouter()
   const lastSelectedProjectId = useRef<number | null>(null)
+  
+  // State for new project dialog
+  const [showNewProjectDialog, setShowNewProjectDialog] = useState(false)
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
   
   // Get current project ID and app ID from URL if available
   const urlProjectId = params?.projectId ? Number(params.projectId) : null
@@ -60,17 +67,57 @@ export function RatSidebar() {
     } 
   }
 
+  // Handle create project
+  const handleCreateProject = async (formData: { name: string; description: string }) => {
+    if (!formData.name.trim()) {
+      toast.error("Please enter project name")
+      throw new Error("Name is required")
+    }
+
+    if (!formData.description.trim()) {
+      toast.error("Please enter project description")
+      throw new Error("Description is required")
+    }
+
+    try {
+      setIsCreatingProject(true)
+
+      const result = await createProject({
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+      })
+
+      console.log("Project created successfully:", result)
+
+      // Refresh projects list
+      await refreshProjects()
+
+      toast.success(`Project "${result.name}" has been created successfully`)
+
+      setShowNewProjectDialog(false)
+    } catch (err: any) {
+      console.error("Error creating project:", err)
+      const errorMessage = err.message || "Failed to create project"
+      toast.error(errorMessage)
+      throw err
+    } finally {
+      setIsCreatingProject(false)
+    }
+  }
+
   return (
     <aside className="w-72 min-h-[calc(100vh-2rem)] bg-muted/50 rounded-2xl m-4 mr-0 p-4 flex flex-col">
       {/* Projects Section */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-bold text-foreground">Projects</h2>
-          <Link href="/new-project">
-            <Button size="sm" className="rounded-lg h-8 px-3">
-              Add new
-            </Button>
-          </Link>
+          <Button 
+            size="sm" 
+            className="rounded-lg h-8 px-3"
+            onClick={() => setShowNewProjectDialog(true)}
+          >
+            Add new
+          </Button>
         </div>
 
         {error && (
@@ -124,13 +171,6 @@ export function RatSidebar() {
                 <FileSearch className="h-4 w-4" />
                 Analyze requirement
               </Link>
-              <Link
-                href={`/projects/${selectedProject.id}/generate-testcase`}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-background rounded-lg transition-colors"
-              >
-                <TestTube2 className="h-4 w-4" />
-                Generate test case
-              </Link>
             </nav>
           </div>
 
@@ -171,6 +211,14 @@ export function RatSidebar() {
           </div>
         </div>
       )}
+
+      {/* New Project Dialog */}
+      <NewProjectDialog
+        open={showNewProjectDialog}
+        onOpenChange={setShowNewProjectDialog}
+        onSave={handleCreateProject}
+        isLoading={isCreatingProject}
+      />
     </aside>
   )
 }
