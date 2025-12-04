@@ -233,16 +233,16 @@ export function AddFeatureDialog({ open, onOpenChange, appId, onSave, isLoading 
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-5xl h-[90vh] overflow-hidden flex flex-col gap-0">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Add New Feature</DialogTitle>
           <DialogDescription>
             Create a new feature with sub-features and attachments.
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6 py-4 px-1">
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-6 py-4 pr-4">
             {/* Basic Info */}
             <div className="space-y-4">
               <div className="grid gap-2">
@@ -515,7 +515,7 @@ export function AddFeatureDialog({ open, onOpenChange, appId, onSave, isLoading 
           </div>
         </ScrollArea>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 pt-4">
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isLoading}>
             Cancel
           </Button>

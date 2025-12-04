@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Loader2 } from "lucide-react"
 
 interface AddAppDialogProps {
@@ -55,15 +56,16 @@ export function AddAppDialog({ open, onOpenChange, onSave, isLoading }: AddAppDi
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col gap-0">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Add New App</DialogTitle>
           <DialogDescription>
             Create a new application for your project.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-4 py-4 pr-4">
           {/* Name */}
           <div className="grid gap-2">
             <Label htmlFor="app-name">
@@ -117,9 +119,10 @@ export function AddAppDialog({ open, onOpenChange, onSave, isLoading }: AddAppDi
               required
             />
           </div>
-        </div>
+          </div>
+        </ScrollArea>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 pt-4">
           <Button
             type="button"
             variant="outline"

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Loader2 } from "lucide-react"
 
 interface ProjectFormData {
@@ -44,15 +45,16 @@ export function NewProjectDialog({ open, onOpenChange, onSave, isLoading }: NewP
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-hidden flex flex-col gap-0">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Create New Project</DialogTitle>
           <DialogDescription>
             Enter the project details below. Click create when you're done.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="grid gap-4 py-4 pr-4">
           <div className="grid gap-2">
             <Label htmlFor="name">
               Project Name <span className="text-red-500">*</span>
@@ -79,9 +81,10 @@ export function NewProjectDialog({ open, onOpenChange, onSave, isLoading }: NewP
               disabled={isLoading}
             />
           </div>
-        </div>
+          </div>
+        </ScrollArea>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 pt-4">
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isLoading}>
             Cancel
           </Button>
