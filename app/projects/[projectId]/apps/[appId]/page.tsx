@@ -7,7 +7,7 @@ import { useProject } from "@/lib/project-context"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Globe, Smartphone, Monitor, Calendar, Edit, Loader2, ChevronDown, AlertCircle, Trash2, Plus, X, Link as LinkIcon, FileUp, Download } from "lucide-react"
+import { ArrowLeft, Globe, Smartphone, Monitor, Calendar, Edit, Loader2, ChevronDown, AlertCircle, Trash2, Plus, X, Link as LinkIcon, FileUp, Download, ExternalLink } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import Link from "next/link"
-import { getAppDetail, getRelatedFeaturesTree, type AppDetail, type RelatedAppFeatures, type Feature } from "@/lib/api/apps"
+import { getAppDetail, type AppDetail, type Feature } from "@/lib/api/apps"
 import { createFeature } from "@/lib/api/features"
 import { toast } from "sonner"
 import axios from "axios"
@@ -56,10 +56,6 @@ function AppDetailContent() {
   const [appDetail, setAppDetail] = useState<AppDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
-  // State quản lý related features
-  const [relatedFeatures, setRelatedFeatures] = useState<RelatedAppFeatures[]>([])
-  const [isLoadingRelated, setIsLoadingRelated] = useState(false)
   
   // State quản lý delete dialog
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -87,6 +83,9 @@ function AppDetailContent() {
 
   // State quản lý download testcases
   const [isDownloadingTestcases, setIsDownloadingTestcases] = useState(false)
+
+  // State quản lý accordion mở
+  const [openAccordions, setOpenAccordions] = useState<string[]>([])
 
   // Auto-select project if not already selected
   useEffect(() => {
@@ -124,25 +123,32 @@ function AppDetailContent() {
     loadAppDetail()
   }, [projectId, appId])
 
-  // Load related features tree
+  // Handle scroll to feature when hash is present
   useEffect(() => {
-    const loadRelatedFeatures = async () => {
-      if (!appId) return
+    if (!appDetail || isLoading) return
 
-      try {
-        setIsLoadingRelated(true)
-        const data = await getRelatedFeaturesTree(appId)
-        setRelatedFeatures(data)
-      } catch (err: any) {
-        console.error("Error loading related features:", err)
-        // Don't show error toast for related features, just log it
-      } finally {
-        setIsLoadingRelated(false)
+    const hash = window.location.hash
+    if (hash) {
+      const featureId = hash.replace("#feature-", "")
+      if (featureId) {
+        // Open accordion for this feature
+        setOpenAccordions((prev) => {
+          if (!prev.includes(`feature-${featureId}`)) {
+            return [...prev, `feature-${featureId}`]
+          }
+          return prev
+        })
+
+        // Scroll to element after a short delay to ensure accordion is open
+        setTimeout(() => {
+          const element = document.querySelector(hash)
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "start" })
+          }
+        }, 300)
       }
     }
-
-    loadRelatedFeatures()
-  }, [appId])
+  }, [appDetail, isLoading])
 
   const app = appDetail
 
@@ -277,10 +283,6 @@ function AppDetailContent() {
       // Refresh projects để cập nhật sidebar
       await refreshProjects()
 
-      // Reload related features
-      const relatedData = await getRelatedFeaturesTree(appId)
-      setRelatedFeatures(relatedData)
-
       setShowAddFeatureDialog(false)
     } catch (err: any) {
       console.error("Error creating feature:", err)
@@ -315,10 +317,6 @@ function AppDetailContent() {
 
       // Refresh projects để cập nhật sidebar
       await refreshProjects()
-
-      // Reload related features
-      const relatedData = await getRelatedFeaturesTree(appId)
-      setRelatedFeatures(relatedData)
 
       setShowEditFeatureDialog(false)
       setEditingFeature(null)
@@ -667,7 +665,12 @@ function AppDetailContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Accordion type="multiple" className="w-full">
+            <Accordion 
+              type="multiple" 
+              className="w-full" 
+              value={openAccordions}
+              onValueChange={setOpenAccordions}
+            >
               {sortedParentFeatures.map((feature) => {
                 // Sắp xếp children theo order_index
                 const sortedChildren = feature.children
@@ -675,7 +678,12 @@ function AppDetailContent() {
                   : []
 
                 return (
-                  <AccordionItem key={feature.id} value={`feature-${feature.id}`} className="border-b last:border-0">
+                  <AccordionItem 
+                    key={feature.id} 
+                    value={`feature-${feature.id}`} 
+                    id={`feature-${feature.id}`}
+                    className="border-b last:border-0"
+                  >
                     <div className="py-4">
                       <div className="flex items-start justify-between gap-4">
                         {sortedChildren.length > 0 ? (
@@ -694,14 +702,49 @@ function AppDetailContent() {
                             </div>
                           </AccordionTrigger>
                         ) : (
-                          <div className="flex items-start gap-3 text-left flex-1">
-                            <Badge variant="outline" className="mt-0.5 font-mono text-xs">
-                              {feature.order_index}
-                            </Badge>
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-base">{feature.name}</h4>
-                              <p className="text-sm text-muted-foreground mt-1">{feature.description}</p>
+                          <div className="flex-1">
+                            <div className="flex items-start gap-3 text-left">
+                              <Badge variant="outline" className="mt-0.5 font-mono text-xs">
+                                {feature.order_index}
+                              </Badge>
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-base">{feature.name}</h4>
+                                <p className="text-sm text-muted-foreground mt-1">{feature.description}</p>
+                              </div>
                             </div>
+                            
+                            {/* Related Features for parent without children */}
+                            {feature.related_features && feature.related_features.length > 0 && (
+                              <div className="ml-8 mt-3 space-y-2">
+                                <p className="text-xs text-muted-foreground font-medium">
+                                  Related Features ({feature.related_features.length})
+                                </p>
+                                <div className="grid grid-cols-1 gap-2">
+                                  {feature.related_features.map((relatedFeature) => (
+                                    <Link
+                                      key={relatedFeature.id}
+                                      href={`/projects/${projectId}/apps/${relatedFeature.project_app_id}#feature-${relatedFeature.parent?.id || relatedFeature.id}`}
+                                      className="block"
+                                    >
+                                      <div className="px-3 py-2 rounded-lg bg-muted/50 border border-border hover:border-primary/50 transition-all cursor-pointer group">
+                                        <div className="flex items-start gap-2">
+                                          <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors mt-0.5 flex-shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-medium group-hover:text-primary transition-colors line-clamp-1">
+                                              {relatedFeature.name}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                              {relatedFeature.project_app.name}
+                                              {relatedFeature.parent && ` • ${relatedFeature.parent.name}`}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </Link>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                         <div className="flex gap-1">
@@ -735,21 +778,53 @@ function AppDetailContent() {
                       <AccordionContent className="pb-4">
                         <div className="pl-12 space-y-3">
                           {sortedChildren.map((child) => (
-                            <div
-                              key={child.id}
-                              className="p-4 rounded-xl bg-muted/50 border border-border/50"
-                            >
-                              <div className="flex items-start gap-3">
-                                <Badge variant="secondary" className="mt-0.5 font-mono text-xs">
-                                  {feature.order_index}.{child.order_index}
-                                </Badge>
-                                <div className="flex-1">
-                                  <h5 className="font-medium text-sm">{child.name}</h5>
-                                  <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                                    {child.description}
-                                  </p>
+                            <div key={child.id} className="space-y-2">
+                              <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
+                                <div className="flex items-start gap-3">
+                                  <Badge variant="secondary" className="mt-0.5 font-mono text-xs">
+                                    {feature.order_index}.{child.order_index}
+                                  </Badge>
+                                  <div className="flex-1">
+                                    <h5 className="font-medium text-sm">{child.name}</h5>
+                                    <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                                      {child.description}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
+                              
+                              {/* Related Features for this child */}
+                              {child.related_features && child.related_features.length > 0 && (
+                                <div className="ml-8 space-y-2">
+                                  <p className="text-xs text-muted-foreground font-medium">
+                                    Related Features ({child.related_features.length})
+                                  </p>
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {child.related_features.map((relatedFeature) => (
+                                      <Link
+                                        key={relatedFeature.id}
+                                        href={`/projects/${projectId}/apps/${relatedFeature.project_app_id}#feature-${relatedFeature.parent?.id || relatedFeature.id}`}
+                                        className="block"
+                                      >
+                                        <div className="px-3 py-2 rounded-lg bg-background border border-border hover:border-primary/50 transition-all cursor-pointer group">
+                                          <div className="flex items-start gap-2">
+                                            <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors mt-0.5 flex-shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-xs font-medium group-hover:text-primary transition-colors line-clamp-1">
+                                                {relatedFeature.name}
+                                              </p>
+                                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                                {relatedFeature.project_app.name}
+                                                {relatedFeature.parent && ` • ${relatedFeature.parent.name}`}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </Link>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -761,60 +836,6 @@ function AppDetailContent() {
             </Accordion>
           </CardContent>
         </Card>
-      )}
-
-      {/* Related Features Section */}
-      {relatedFeatures.length > 0 && (
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-xl font-bold">Related Features</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Features from other apps in this project
-            </p>
-          </div>
-
-          <div className="relative overflow-x-auto pb-2">
-            <div className="grid grid-flow-col auto-cols-[minmax(280px,1fr)] grid-rows-2 gap-4">
-              {relatedFeatures.flatMap((appFeatures) =>
-                appFeatures.features.map((feature) => (
-                  <Card key={`${appFeatures.app_id}-${feature.id}`} className="rounded-2xl">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <CardTitle className="text-base line-clamp-1">{feature.name}</CardTitle>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                            {appFeatures.app_name}
-                          </p>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {feature.children.length > 0 ? (
-                        <div className="space-y-2 max-h-[120px] overflow-y-auto">
-                          {feature.children.map((child) => (
-                            <Link
-                              key={child.id}
-                              href={`/projects/${projectId}/apps/${appFeatures.app_id}`}
-                              className="block"
-                            >
-                              <div className="px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer group">
-                                <p className="text-sm font-medium group-hover:text-primary transition-colors line-clamp-2">
-                                  {child.name}
-                                </p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No sub-features</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
       )}
     </div>
   )

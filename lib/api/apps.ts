@@ -1,5 +1,35 @@
 import axios from "axios"
 
+export interface RelatedFeature {
+  id: number
+  project_app_id: number
+  project_app: {
+    id: number
+    created_at: string
+    updated_at: string
+    project_id: number
+    name: string
+    type: string
+    description: string | null
+  }
+  parent_feature_id: number | null
+  parent: {
+    id: number
+    created_at: string
+    updated_at: string
+    project_app_id: number
+    parent_feature_id: number | null
+    code: string
+    name: string
+    description: string
+    order_index: number
+    attachments: any[]
+  } | null
+  name: string
+  code: string
+  description: string
+}
+
 export interface Feature {
   id: number
   created_at: string
@@ -12,6 +42,7 @@ export interface Feature {
   order_index: number
   attachments: any[]
   children?: Feature[]
+  related_features?: RelatedFeature[]
 }
 
 export interface AppDetail {
@@ -108,3 +139,42 @@ export async function getRelatedFeaturesTree(appId: number): Promise<RelatedAppF
   }
 }
 
+export interface CreateAppParams {
+  name: string
+  type: string
+  description: string
+}
+
+export interface CreateAppResponse {
+  id: number
+  name: string
+  type: string
+  description: string
+  project_id: number
+  created_at: string
+  updated_at: string
+}
+
+export async function createApp(projectId: number, params: CreateAppParams): Promise<CreateAppResponse> {
+  try {
+    console.log("[Client] Creating app for project:", projectId, params)
+    
+    const response = await clientApi.post<CreateAppResponse>(
+      `/api/projects/${projectId}/apps`,
+      params
+    )
+
+    console.log("[Client] createApp response:", response.data)
+
+    return response.data
+  } catch (error) {
+    console.error("[Client] createApp error:", error)
+    
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.error || error.message
+      throw new Error(message)
+    }
+    
+    throw error
+  }
+}

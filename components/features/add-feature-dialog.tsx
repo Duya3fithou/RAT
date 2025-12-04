@@ -1,25 +1,34 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Plus, X, Link as LinkIcon, FileUp, Trash2 } from "lucide-react"
+import { Loader2, Plus, X, Link as LinkIcon, FileUp, Trash2, GitBranch } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select"
+import { getRelatedFeaturesTree, type RelatedAppFeatures } from "@/lib/api/apps"
+import { toast } from "sonner"
 
 interface Attachment {
   type: "link" | "file"
   source: string
 }
 
+interface RelatedFeatureItem {
+  feature_id: number
+  description: string
+}
+
 interface SubFeature {
   name: string
   description: string
   attachments?: Attachment[]
+  related_features?: RelatedFeatureItem[]
 }
 
 interface FeatureFormData {
@@ -42,8 +51,31 @@ export function AddFeatureDialog({ open, onOpenChange, appId, onSave, isLoading 
     name: "",
     description: "",
     attachments: [],
-    features: [{ name: "", description: "", attachments: [] }],
+    features: [{ name: "", description: "", attachments: [], related_features: [] }],
   })
+
+  const [relatedFeaturesTree, setRelatedFeaturesTree] = useState<RelatedAppFeatures[]>([])
+  const [isLoadingRelated, setIsLoadingRelated] = useState(false)
+
+  // Load related features tree when dialog opens
+  useEffect(() => {
+    const loadRelatedFeatures = async () => {
+      if (!open || !appId) return
+
+      try {
+        setIsLoadingRelated(true)
+        const data = await getRelatedFeaturesTree(appId)
+        setRelatedFeaturesTree(data)
+      } catch (err: any) {
+        console.error("Error loading related features:", err)
+        toast.error("Failed to load related features")
+      } finally {
+        setIsLoadingRelated(false)
+      }
+    }
+
+    loadRelatedFeatures()
+  }, [open, appId])
 
   // Reset form when dialog opens
   const handleOpenChange = (newOpen: boolean) => {
@@ -53,14 +85,32 @@ export function AddFeatureDialog({ open, onOpenChange, appId, onSave, isLoading 
         name: "",
         description: "",
         attachments: [],
-        features: [{ name: "", description: "", attachments: [] }],
+        features: [{ name: "", description: "", attachments: [], related_features: [] }],
       })
+      setRelatedFeaturesTree([])
     }
     onOpenChange(newOpen)
   }
 
   const handleSubmit = async () => {
-    await onSave(formData)
+    // Validate name is required
+    if (!formData.name.trim()) {
+      toast.error("Feature name is required")
+      return
+    }
+
+    // Filter out empty attachments
+    const cleanedData = {
+      ...formData,
+      attachments: formData.attachments.filter(att => att.source.trim()),
+      features: formData.features.map(feature => ({
+        ...feature,
+        attachments: feature.attachments?.filter(att => att.source.trim()) || [],
+        related_features: feature.related_features?.filter(rel => rel.description.trim()) || []
+      }))
+    }
+
+    await onSave(cleanedData)
   }
 
   // Attachments handlers
@@ -88,7 +138,7 @@ export function AddFeatureDialog({ open, onOpenChange, appId, onSave, isLoading 
   const addSubFeature = () => {
     setFormData({
       ...formData,
-      features: [...formData.features, { name: "", description: "", attachments: [] }],
+      features: [...formData.features, { name: "", description: "", attachments: [], related_features: [] }],
     })
   }
 
@@ -133,6 +183,54 @@ export function AddFeatureDialog({ open, onOpenChange, appId, onSave, isLoading 
     setFormData({ ...formData, features: newFeatures })
   }
 
+  // Related features handlers
+  const addRelatedFeature = (featureIndex: number) => {
+    const newFeatures = [...formData.features]
+    if (!newFeatures[featureIndex].related_features) {
+      newFeatures[featureIndex].related_features = []
+    }
+    newFeatures[featureIndex].related_features!.push({ feature_id: 0, description: "" })
+    setFormData({ ...formData, features: newFeatures })
+  }
+
+  const updateRelatedFeature = (featureIndex: number, relatedIndex: number, field: keyof RelatedFeatureItem, value: any) => {
+    const newFeatures = [...formData.features]
+    if (newFeatures[featureIndex].related_features) {
+      newFeatures[featureIndex].related_features![relatedIndex] = {
+        ...newFeatures[featureIndex].related_features![relatedIndex],
+        [field]: value
+      }
+    }
+    setFormData({ ...formData, features: newFeatures })
+  }
+
+  const removeRelatedFeature = (featureIndex: number, relatedIndex: number) => {
+    const newFeatures = [...formData.features]
+    if (newFeatures[featureIndex].related_features) {
+      newFeatures[featureIndex].related_features = newFeatures[featureIndex].related_features!.filter(
+        (_, i) => i !== relatedIndex
+      )
+    }
+    setFormData({ ...formData, features: newFeatures })
+  }
+
+  // Get feature name by ID from tree
+  const getFeatureNameById = (featureId: number): string => {
+    for (const app of relatedFeaturesTree) {
+      for (const feature of app.features) {
+        if (feature.id === featureId) {
+          return `${app.app_name} → ${feature.name}`
+        }
+        for (const child of feature.children) {
+          if (child.id === featureId) {
+            return `${app.app_name} → ${feature.name} → ${child.name}`
+          }
+        }
+      }
+    }
+    return "Unknown feature"
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -148,13 +246,16 @@ export function AddFeatureDialog({ open, onOpenChange, appId, onSave, isLoading 
             {/* Basic Info */}
             <div className="space-y-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">
+                  Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Feature name"
                   disabled={isLoading}
+                  required
                 />
               </div>
 
@@ -326,6 +427,84 @@ export function AddFeatureDialog({ open, onOpenChange, appId, onSave, isLoading 
                           >
                             <X className="h-3 w-3" />
                           </Button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Related Features */}
+                    <div className="space-y-2 pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium">Related Features</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addRelatedFeature(featureIndex)}
+                          disabled={isLoading || isLoadingRelated}
+                        >
+                          <GitBranch className="h-3 w-3 mr-1" />
+                          Add Related
+                        </Button>
+                      </div>
+
+                      {subFeature.related_features?.map((relatedFeature, relatedIndex) => (
+                        <div key={relatedIndex} className="space-y-2 p-2 rounded-lg bg-muted/50 border">
+                          <div className="flex gap-2">
+                            <Select
+                              value={relatedFeature.feature_id.toString()}
+                              onValueChange={(value) => updateRelatedFeature(featureIndex, relatedIndex, "feature_id", Number(value))}
+                              disabled={isLoading || isLoadingRelated}
+                            >
+                              <SelectTrigger className="text-xs h-8">
+                                <SelectValue placeholder="Select feature..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {isLoadingRelated ? (
+                                  <div className="p-2 text-xs text-muted-foreground">Loading...</div>
+                                ) : (
+                                  relatedFeaturesTree.map((app) => (
+                                    <SelectGroup key={app.app_id}>
+                                      <SelectLabel className="text-xs font-semibold">{app.app_name}</SelectLabel>
+                                      {app.features.map((feature) => (
+                                        <div key={feature.id}>
+                                          <SelectItem value={feature.id.toString()} className="text-xs pl-4">
+                                            {feature.name}
+                                          </SelectItem>
+                                          {feature.children.map((child) => (
+                                            <SelectItem key={child.id} value={child.id.toString()} className="text-xs pl-8">
+                                              → {child.name}
+                                            </SelectItem>
+                                          ))}
+                                        </div>
+                                      ))}
+                                    </SelectGroup>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => removeRelatedFeature(featureIndex, relatedIndex)}
+                              disabled={isLoading}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          {relatedFeature.feature_id > 0 && (
+                            <div className="text-xs text-muted-foreground pl-2">
+                              {getFeatureNameById(relatedFeature.feature_id)}
+                            </div>
+                          )}
+                          <Input
+                            value={relatedFeature.description}
+                            onChange={(e) => updateRelatedFeature(featureIndex, relatedIndex, "description", e.target.value)}
+                            placeholder="Describe the relationship..."
+                            className="text-xs h-8"
+                            disabled={isLoading}
+                          />
                         </div>
                       ))}
                     </div>

@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useProject } from "@/lib/project-context"
 import { NewProjectDialog } from "@/components/projects/new-project-dialog"
+import { AddAppDialog } from "@/components/projects/add-app-dialog"
 import { createProject } from "@/lib/api/projects"
+import { createApp } from "@/lib/api/apps"
 import { toast } from "sonner"
 
 export function RatSidebar() {
@@ -21,6 +23,10 @@ export function RatSidebar() {
   // State for new project dialog
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false)
   const [isCreatingProject, setIsCreatingProject] = useState(false)
+  
+  // State for add app dialog
+  const [showAddAppDialog, setShowAddAppDialog] = useState(false)
+  const [isCreatingApp, setIsCreatingApp] = useState(false)
   
   // Get current project ID and app ID from URL if available
   const urlProjectId = params?.projectId ? Number(params.projectId) : null
@@ -102,6 +108,47 @@ export function RatSidebar() {
       throw err
     } finally {
       setIsCreatingProject(false)
+    }
+  }
+
+  // Handle open add app dialog
+  const handleOpenAddAppDialog = () => {
+    if (!selectedProject) {
+      toast.error("Please select a project first")
+      return
+    }
+
+    setShowAddAppDialog(true)
+  }
+
+  // Handle create app
+  const handleCreateApp = async (formData: { name: string; type: string; description: string }) => {
+    if (!selectedProject) {
+      toast.error("No project selected")
+      throw new Error("No project selected")
+    }
+
+    try {
+      setIsCreatingApp(true)
+
+      const result = await createApp(selectedProject.id, formData)
+
+      toast.success("App created successfully!")
+
+      // Refresh projects để cập nhật sidebar
+      await refreshProjects()
+
+      // Navigate to the new app detail page
+      router.push(`/projects/${selectedProject.id}/apps/${result.id}`)
+
+      setShowAddAppDialog(false)
+    } catch (err: any) {
+      console.error("Error creating app:", err)
+      const errorMessage = err.response?.data?.error || err.message || "Failed to create app"
+      toast.error(errorMessage)
+      throw err
+    } finally {
+      setIsCreatingApp(false)
     }
   }
 
@@ -194,19 +241,13 @@ export function RatSidebar() {
                   </Link>
                 )
               })}
-              <Link
-                href={
-                  currentAppId
-                    ? `/projects/${selectedProject.id}/apps/${currentAppId}/add-new-feature`
-                    : selectedProject.apps.length > 0
-                    ? `/projects/${selectedProject.id}/apps/${selectedProject.apps[0].id}/add-new-feature`
-                    : `/projects/${selectedProject.id}/add-new-app`
-                }
-                className="flex items-center gap-1 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              <button
+                onClick={handleOpenAddAppDialog}
+                className="flex items-center gap-1 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full text-left rounded-lg hover:bg-background"
               >
                 <Plus className="h-3 w-3" />
                 Add new
-              </Link>
+              </button>
             </nav>
           </div>
         </div>
@@ -218,6 +259,14 @@ export function RatSidebar() {
         onOpenChange={setShowNewProjectDialog}
         onSave={handleCreateProject}
         isLoading={isCreatingProject}
+      />
+
+      {/* Add App Dialog */}
+      <AddAppDialog
+        open={showAddAppDialog}
+        onOpenChange={setShowAddAppDialog}
+        onSave={handleCreateApp}
+        isLoading={isCreatingApp}
       />
     </aside>
   )

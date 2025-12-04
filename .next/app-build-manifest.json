@@ -16,11 +16,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
-    "/projects/[projectId]/apps/[appId]/add-new-feature/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/projects/[projectId]/apps/[appId]/add-new-feature/page.js"
-    ],
     "/projects/[projectId]/generate-testcase/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
