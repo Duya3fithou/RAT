@@ -734,7 +734,7 @@ function AppDetailContent() {
                                               {relatedFeature.name}
                                             </p>
                                             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                                              {relatedFeature.project_app.name}
+                                              {relatedFeature.project_app?.name || 'N/A'}
                                               {relatedFeature.parent && ` • ${relatedFeature.parent.name}`}
                                             </p>
                                           </div>
@@ -814,7 +814,7 @@ function AppDetailContent() {
                                                 {relatedFeature.name}
                                               </p>
                                               <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                                                {relatedFeature.project_app.name}
+                                                {relatedFeature.project_app?.name || 'N/A'}
                                                 {relatedFeature.parent && ` • ${relatedFeature.parent.name}`}
                                               </p>
                                             </div>
