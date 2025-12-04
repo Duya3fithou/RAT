@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { FileSearch, TestTube2, Plus, Loader2 } from "lucide-react"
@@ -13,6 +13,7 @@ export function RatSidebar() {
   const params = useParams()
   const pathname = usePathname()
   const router = useRouter()
+  const lastSelectedProjectId = useRef<number | null>(null)
   
   // Get current project ID and app ID from URL if available
   const urlProjectId = params?.projectId ? Number(params.projectId) : null
@@ -21,12 +22,13 @@ export function RatSidebar() {
   // Auto-select project based on URL params
   useEffect(() => {
     if (urlProjectId && projects.length > 0 && !isLoading) {
-      // Only auto-select if current selected project doesn't match URL
-      if (!selectedProject || selectedProject.id !== urlProjectId) {
+      // Chỉ update khi project thực sự thay đổi
+      if (lastSelectedProjectId.current !== urlProjectId) {
         const projectFromUrl = projects.find((p) => p.id === urlProjectId)
-        if (projectFromUrl) {
+        if (projectFromUrl && (!selectedProject || selectedProject.id !== urlProjectId)) {
           console.log("[Sidebar] Auto-selecting project from URL:", projectFromUrl.id)
           setSelectedProject(projectFromUrl)
+          lastSelectedProjectId.current = urlProjectId
         }
       }
     }
@@ -54,9 +56,8 @@ export function RatSidebar() {
         } else if (pathname.includes('/add-new-app')) {
           router.push(`/projects/${projectId}/add-new-app`)
         }
-        // Nếu không match các trường hợp trên, giữ nguyên (có thể đang ở trang list)
       }
-    }
+    } 
   }
 
   return (
@@ -137,15 +138,22 @@ export function RatSidebar() {
           <div className="space-y-2">
             <h3 className="font-bold text-foreground">System structure</h3>
             <nav className="space-y-1 pl-2 border-l-2 border-muted-foreground/20">
-              {selectedProject.apps.map((app) => (
-                <Link
-                  key={app.id}
-                  href={`/projects/${selectedProject.id}/apps/${app.id}`}
-                  className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-background rounded-lg transition-colors"
-                >
-                  {app.name}
-                </Link>
-              ))}
+              {selectedProject.apps.map((app) => {
+                const isActive = currentAppId === app.id
+                return (
+                  <Link
+                    key={app.id}
+                    href={`/projects/${selectedProject.id}/apps/${app.id}`}
+                    className={`block px-3 py-2 text-sm rounded-lg transition-colors ${
+                      isActive
+                        ? "bg-background text-foreground font-semibold"
+                        : "text-muted-foreground hover:text-foreground hover:bg-background"
+                    }`}
+                  >
+                    {app.name}
+                  </Link>
+                )
+              })}
               <Link
                 href={
                   currentAppId

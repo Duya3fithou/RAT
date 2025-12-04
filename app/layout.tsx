@@ -7,12 +7,8 @@ import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
-  icons: {
-    icon: '/icon.svg',
-  },
+  title: 'RAT',
+  description: 'RAT',
 }
 
 export default function RootLayout({
