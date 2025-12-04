@@ -149,7 +149,7 @@ export function EditFeatureDialog({ open, onOpenChange, feature, appId, onSave, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit Feature</DialogTitle>
           <DialogDescription>
@@ -158,7 +158,7 @@ export function EditFeatureDialog({ open, onOpenChange, feature, appId, onSave, 
         </DialogHeader>
 
         <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4 px-1">
             {/* Basic Info */}
             <div className="space-y-4">
               <div className="grid gap-2">

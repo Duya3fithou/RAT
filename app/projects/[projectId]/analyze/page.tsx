@@ -270,7 +270,7 @@ function AnalyzeContent() {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="border-b bg-background p-4">
-          <div className="max-w-4xl mx-auto flex items-start justify-between">
+          <div className="max-w-5xl mx-auto flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-3">
                 <FileSearch className="h-6 w-6" />
@@ -307,7 +307,7 @@ function AnalyzeContent() {
 
         {/* Messages area */}
         <ScrollArea className="flex-1 p-4">
-          <div className="max-w-4xl mx-auto space-y-4">
+          <div className="max-w-5xl mx-auto space-y-4">
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
@@ -368,7 +368,7 @@ function AnalyzeContent() {
 
         {/* Input area */}
         <div className="border-t bg-background p-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <div className="flex gap-3">
               <Textarea
                 placeholder={

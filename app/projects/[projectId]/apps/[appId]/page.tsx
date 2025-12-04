@@ -7,7 +7,7 @@ import { useProject } from "@/lib/project-context"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Globe, Smartphone, Monitor, Calendar, Edit, Loader2, ChevronDown, AlertCircle, Trash2, Plus, X, Link as LinkIcon, FileUp } from "lucide-react"
+import { ArrowLeft, Globe, Smartphone, Monitor, Calendar, Edit, Loader2, ChevronDown, AlertCircle, Trash2, Plus, X, Link as LinkIcon, FileUp, Download } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
@@ -39,9 +39,11 @@ import {
 } from "@/components/ui/select"
 import Link from "next/link"
 import { getAppDetail, getRelatedFeaturesTree, type AppDetail, type RelatedAppFeatures, type Feature } from "@/lib/api/apps"
+import { createFeature } from "@/lib/api/features"
 import { toast } from "sonner"
 import axios from "axios"
 import { EditFeatureDialog } from "@/components/features/edit-feature-dialog"
+import { AddFeatureDialog } from "@/components/features/add-feature-dialog"
 
 function AppDetailContent() {
   const params = useParams()
@@ -73,11 +75,18 @@ function AppDetailContent() {
   const [showEditFeatureDialog, setShowEditFeatureDialog] = useState(false)
   const [editingFeature, setEditingFeature] = useState<Feature | null>(null)
   const [isUpdatingFeature, setIsUpdatingFeature] = useState(false)
+
+  // State quản lý add feature dialog
+  const [showAddFeatureDialog, setShowAddFeatureDialog] = useState(false)
+  const [isCreatingFeature, setIsCreatingFeature] = useState(false)
   
   // State quản lý delete feature dialog  
   const [showDeleteFeatureDialog, setShowDeleteFeatureDialog] = useState(false)
   const [deletingFeature, setDeletingFeature] = useState<Feature | null>(null)
   const [isDeletingFeature, setIsDeletingFeature] = useState(false)
+
+  // State quản lý download testcases
+  const [isDownloadingTestcases, setIsDownloadingTestcases] = useState(false)
 
   // Auto-select project if not already selected
   useEffect(() => {
@@ -247,6 +256,42 @@ function AppDetailContent() {
     }
   }
 
+  // Handle add feature
+  const handleAddFeature = () => {
+    setShowAddFeatureDialog(true)
+  }
+
+  // Handle create feature
+  const handleCreateFeature = async (formData: any) => {
+    try {
+      setIsCreatingFeature(true)
+
+      await createFeature(appId, formData)
+
+      toast.success("Feature created successfully!")
+
+      // Reload app detail
+      const updatedData = await getAppDetail(projectId, appId)
+      setAppDetail(updatedData)
+
+      // Refresh projects để cập nhật sidebar
+      await refreshProjects()
+
+      // Reload related features
+      const relatedData = await getRelatedFeaturesTree(appId)
+      setRelatedFeatures(relatedData)
+
+      setShowAddFeatureDialog(false)
+    } catch (err: any) {
+      console.error("Error creating feature:", err)
+      const errorMessage = err.response?.data?.error || err.message || "Failed to create feature"
+      toast.error(errorMessage)
+      throw err
+    } finally {
+      setIsCreatingFeature(false)
+    }
+  }
+
   // Handle edit feature
   const handleEditFeature = (feature: Feature) => {
     setEditingFeature(feature)
@@ -346,8 +391,49 @@ function AppDetailContent() {
     }
   }
 
+  // Handle download testcases for app
+  const handleDownloadTestcases = async () => {
+    try {
+      setIsDownloadingTestcases(true)
+      setError(null)
+
+      const apiUrl = `/api/projects/${projectId}/requirement-analyze/test-cases/${appId}`
+      console.log("[Download] Fetching test cases from:", apiUrl)
+
+      const response = await axios.get(apiUrl, {
+        responseType: "blob",
+      })
+
+      // Tạo blob URL và trigger download
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+
+      // Tạo tên file với timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-")
+      link.download = `testcases_app_${appId}_${timestamp}.xlsx`
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      toast.success("Test cases downloaded successfully!")
+    } catch (err: any) {
+      console.error("Error downloading test cases:", err)
+      const errorMessage = err.response?.data?.error || err.message || "Failed to download test cases"
+      setError(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      setIsDownloadingTestcases(false)
+    }
+  }
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/">
           <Button variant="ghost" size="icon" className="rounded-xl">
@@ -371,12 +457,31 @@ function AppDetailContent() {
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Link href={`/projects/${projectId}/apps/${app.id}/add-new-feature`}>
-            <Button className="rounded-xl bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90">
-              Add Feature
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+          <Button 
+            onClick={handleAddFeature}
+            className="rounded-xl bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+          >
+            Add Feature
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-xl bg-transparent"
+            onClick={handleDownloadTestcases}
+            disabled={isDownloadingTestcases}
+          >
+            {isDownloadingTestcases ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Downloading...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Testcase
+              </>
+            )}
+          </Button>
           <Button 
             variant="outline" 
             className="rounded-xl bg-transparent"
@@ -489,6 +594,15 @@ function AppDetailContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Feature Dialog */}
+      <AddFeatureDialog
+        open={showAddFeatureDialog}
+        onOpenChange={setShowAddFeatureDialog}
+        appId={appId}
+        onSave={handleCreateFeature}
+        isLoading={isCreatingFeature}
+      />
 
       {/* Edit Feature Dialog */}
       {editingFeature && (

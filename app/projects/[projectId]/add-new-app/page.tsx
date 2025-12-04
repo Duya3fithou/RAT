@@ -114,7 +114,7 @@ export default function AddNewAppPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8 flex justify-center items-start">
-      <Card className="w-full max-w-4xl rounded-3xl shadow-lg border-muted/40 overflow-hidden">
+      <Card className="w-full max-w-5xl rounded-3xl shadow-lg border-muted/40 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between gap-4 p-6 border-b border-border/50 bg-muted/10">
           <h1 className="text-2xl font-bold">
